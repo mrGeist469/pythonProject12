@@ -26,7 +26,6 @@ class User:
         }
         result = requests.get(url_vk, params=params_vk)
         res = result.json()
-        pprint(res)
         upload_url = "https://cloud-api.yandex.net/v1/disk/resources"
         headers = {
             'Content-Type': 'application/json',
@@ -36,40 +35,36 @@ class User:
         requests.put(upload_url, headers=headers, params=params)
         exit_file = []
         file_name = []
+        print('Start')
         time.sleep(1)
-        for photo in tqdm(res['response']['items']):
+        for photo in tqdm(res['response']['items'], desc="Copying"):
             load_dict = {}
             upload_url = "https://cloud-api.yandex.net/v1/disk/resources/upload"
             headers = {
                 'Content-Type': 'application/json',
                 'Authorization': 'OAuth {}'.format(self.token)
             }
-            if f"{photo['likes']['count']}.jpg" is not file_name:
-                params = {'path': f"/Photo VK/{str(photo['likes']['count'])}.jpg",
+            if photo['likes']['count'] not in file_name:
+                params = {'path': f"/Photo VK/{str(photo['likes']['count'] + 1)}.jpg",
                           'url': photo['sizes'][-1]['url']
                           }
                 response = requests.post(upload_url, headers=headers, params=params)
-                load_dict['file_name'] = f"{str(photo['likes']['count'])}.jpg"
-                load_dict['size'] = photo['sizes'][-1]['type']
-                exit_file.extend(load_dict)
-                file_name.extend(str(photo['likes']['count']))
+                exit_file.extend(json.dumps({'file_name': f"{str(photo['likes']['count'])}.jpg",
+                                            'size': photo['sizes'][-1]['type']}).split("'"))
+                file_name.append(photo['likes']['count'])
                 time.sleep(1)
             else:
                 params = {
                     'url': photo['sizes'][-1]['url'],
                     'path': f"/Photo VK/{str(photo['likes']['count'])}_{str(photo['date'])}.jpg"
                 }
-                response = requests.post(pload_url, headers=headers, params=params)
-                load_dict['file_name'] = f"{str(photo['likes']['count'])}_{str(photo['date'])}.jpg"
-                load_dict['size'] = photo['sizes'][-1]['type']
-                exit_file.extend(load_dict)
-                file_name.extend(f"{str(photo['likes']['count'])}_{str(photo['date'])}")
+                response = requests.post(upload_url, headers=headers, params=params)
+                exit_file.extend(json.dumps({'file_name': f"{str(photo['likes']['count'])}_{str(photo['date'])}.jpg",
+                                            'size': photo['sizes'][-1]['type']}).split("'"))
+                file_name.append(str(photo['likes']['count']) + "_" + str(photo['date']))
                 time.sleep(1)
-        pprint(exit_file)
-        print(file_name)
-
-
-            # print(response.json)
+        print('Finished')
+        return exit_file
 
 
 if __name__ == '__main__':

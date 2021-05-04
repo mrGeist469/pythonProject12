@@ -25,7 +25,9 @@ class User:
             'v': '5.130'
         }
         result = requests.get(url_vk, params=params_vk)
+        time.sleep(1)
         res = result.json()
+        time.sleep(1)
         upload_url = "https://cloud-api.yandex.net/v1/disk/resources"
         headers = {
             'Content-Type': 'application/json',
@@ -35,7 +37,7 @@ class User:
         requests.put(upload_url, headers=headers, params=params)
         exit_file = []
         file_name = []
-        print('Start')
+        print('Start copying photo')
         time.sleep(1)
         for photo in tqdm(res['response']['items'], desc="Copying"):
             load_dict = {}
@@ -45,7 +47,7 @@ class User:
                 'Authorization': 'OAuth {}'.format(self.token)
             }
             if photo['likes']['count'] not in file_name:
-                params = {'path': f"/Photo VK/{str(photo['likes']['count'] + 1)}.jpg",
+                params = {'path': f"/Photo VK/{str(photo['likes']['count'])}.jpg",
                           'url': photo['sizes'][-1]['url']
                           }
                 response = requests.post(upload_url, headers=headers, params=params)

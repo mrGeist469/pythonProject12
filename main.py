@@ -2,22 +2,18 @@ import requests
 import time
 from tqdm import tqdm
 import json
-from pprint import pprint
-
-with open('token.txt', encoding='utf-8') as f:
-    token_vk = f.readline().strip()
-    token_ya = f.readline().strip()
 
 
 class User:
-    def __init__(self, user_id, token):
+    def __init__(self, user_id, vk, ya):
         self.user_id = user_id
-        self.token = token
+        self.token_vk = vk
+        self.token_ya = ya
 
     def copy_photo(self):
         url_vk = 'https://api.vk.com/method/photos.get'
         params_vk = {
-            'access_token': token_vk,
+            'access_token': self.token_vk,
             'owner_id': self.user_id,
             'album_id': 'profile',
             'extended': 1,
@@ -31,7 +27,7 @@ class User:
         upload_url = "https://cloud-api.yandex.net/v1/disk/resources"
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'OAuth {}'.format(self.token)
+            'Authorization': 'OAuth {}'.format(self.token_ya)
         }
         params = {'path': '/Photo VK'}
         requests.put(upload_url, headers=headers, params=params)
@@ -40,19 +36,18 @@ class User:
         print('Start copying photo')
         time.sleep(1)
         for photo in tqdm(res['response']['items'], desc="Copying"):
-            load_dict = {}
             upload_url = "https://cloud-api.yandex.net/v1/disk/resources/upload"
             headers = {
                 'Content-Type': 'application/json',
-                'Authorization': 'OAuth {}'.format(self.token)
+                'Authorization': 'OAuth {}'.format(self.token_ya)
             }
             if photo['likes']['count'] not in file_name:
                 params = {'path': f"/Photo VK/{str(photo['likes']['count'])}.jpg",
                           'url': photo['sizes'][-1]['url']
                           }
-                response = requests.post(upload_url, headers=headers, params=params)
+                requests.post(upload_url, headers=headers, params=params)
                 exit_file.extend(json.dumps({'file_name': f"{str(photo['likes']['count'])}.jpg",
-                                            'size': photo['sizes'][-1]['type']}).split("'"))
+                                             'size': photo['sizes'][-1]['type']}, indent=4).split("'"))
                 file_name.append(photo['likes']['count'])
                 time.sleep(1)
             else:
@@ -60,15 +55,20 @@ class User:
                     'url': photo['sizes'][-1]['url'],
                     'path': f"/Photo VK/{str(photo['likes']['count'])}_{str(photo['date'])}.jpg"
                 }
-                response = requests.post(upload_url, headers=headers, params=params)
+                requests.post(upload_url, headers=headers, params=params)
                 exit_file.extend(json.dumps({'file_name': f"{str(photo['likes']['count'])}_{str(photo['date'])}.jpg",
-                                            'size': photo['sizes'][-1]['type']}).split("'"))
+                                             'size': photo['sizes'][-1]['type']}, indent=4).split("'"))
                 file_name.append(str(photo['likes']['count']) + "_" + str(photo['date']))
                 time.sleep(1)
         print('Finished')
-        return exit_file
+        with open('file.json', 'w') as file:
+            json.dump(exit_file, file)
 
+
+with open('token.txt', encoding='utf-8') as f:
+    token_vk = f.readline().strip()
+    token_ya = f.readline().strip()
 
 if __name__ == '__main__':
-    user = User(611244575, token_ya)
+    user = User(611244575, token_vk, token_ya)
     user.copy_photo()

@@ -32,7 +32,7 @@ class User:
         params = {'path': '/Photo VK'}
         requests.put(upload_url, headers=headers, params=params)
         exit_file = []
-        file_name = []
+        file_names = []
         print('Start copying photo')
         time.sleep(1)
         for photo in tqdm(res['response']['items'], desc="Copying"):
@@ -41,14 +41,15 @@ class User:
                 'Content-Type': 'application/json',
                 'Authorization': 'OAuth {}'.format(self.token_ya)
             }
-            if photo['likes']['count'] not in file_name:
+            if photo['likes']['count'] not in file_names:
                 params = {'path': f"/Photo VK/{str(photo['likes']['count'])}.jpg",
                           'url': photo['sizes'][-1]['url']
                           }
                 requests.post(upload_url, headers=headers, params=params)
-                exit_file.extend(json.dumps({'file_name': f"{str(photo['likes']['count'])}.jpg",
-                                             'size': photo['sizes'][-1]['type']}, indent=4).split("'"))
-                file_name.append(photo['likes']['count'])
+                file_name = f"{str(photo['likes']['count'])}.jpg"
+                size = photo['sizes'][-1]['type']
+                exit_file.append({'file_name': file_name, 'size': size})
+                file_names.append(photo['likes']['count'])
                 time.sleep(1)
             else:
                 params = {
@@ -56,13 +57,14 @@ class User:
                     'path': f"/Photo VK/{str(photo['likes']['count'])}_{str(photo['date'])}.jpg"
                 }
                 requests.post(upload_url, headers=headers, params=params)
-                exit_file.extend(json.dumps({'file_name': f"{str(photo['likes']['count'])}_{str(photo['date'])}.jpg",
-                                             'size': photo['sizes'][-1]['type']}, indent=4).split("'"))
-                file_name.append(str(photo['likes']['count']) + "_" + str(photo['date']))
+                file_name = f"{str(photo['likes']['count'])}_{str(photo['date'])}.jpg"
+                size = photo['sizes'][-1]['type']
+                exit_file.append({'file_name': file_name, 'size': size})
+                file_names.append(str(photo['likes']['count']) + "_" + str(photo['date']))
                 time.sleep(1)
         print('Finished')
         with open('file.json', 'w') as file:
-            json.dump(exit_file, file)
+            json.dump(exit_file, file, indent=2)
 
 
 with open('token.txt', encoding='utf-8') as f:
